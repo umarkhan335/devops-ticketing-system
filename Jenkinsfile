@@ -9,9 +9,10 @@ pipeline {
     stages {
         // We removed the Checkout stage because Jenkins does it automatically
         
-        stage('Build Docker Image') {
+       stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                // We add "devops-ticketing-system/" before the dot
+                sh "docker build -t ${DOCKER_IMAGE}:latest devops-ticketing-system/"
             }
         }
 
@@ -26,9 +27,11 @@ pipeline {
 
         stage('Deploy with Docker Compose') {
             steps {
-                sh "docker-compose down"
-                sh "docker-compose up -d"
+                // Run the command inside the specific directory
+                dir('devops-ticketing-system') {
+                    sh "docker-compose down"
+                    sh "docker-compose up -d"
+                }
             }
         }
-    }
 }
