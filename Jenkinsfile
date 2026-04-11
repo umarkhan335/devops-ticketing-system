@@ -7,12 +7,8 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/umarkhan335/devops-ticketing-system.git'
-            }
-        }
-
+        // We removed the Checkout stage because Jenkins does it automatically
+        
         stage('Build Docker Image') {
             steps {
                 sh "docker build -t ${DOCKER_IMAGE}:latest ."
