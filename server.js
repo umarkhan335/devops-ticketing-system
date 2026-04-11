@@ -1,33 +1,35 @@
 const express = require("express");
-const { JsonDB, Config } = require("node-json-db");
+const { createClient } = require("redis");
 const path = require("path");
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(express.static(path.join(__dirname, "public")));
 
-// Create a database (saves as db.json)
-const db = new JsonDB(new Config("db", true, false, "/"));
+const client = createClient({
+  url: "redis://redis-db:6379",
+});
 
-// Initialize data if empty
+client.on("error", (err) => console.log("Redis Client Error", err));
+
 (async () => {
-  try {
-    await db.getData("/users");
-  } catch {
-    await db.push("/users", [
-      { id: 1, username: "Test_User", role: "employee" },
-    ]);
-    await db.push("/tickets", []);
-    await db.push("/ticketIdCounter", 1);
+  await client.connect();
+  const users = await client.get("users");
+  if (!users) {
+    await client.set(
+      "users",
+      JSON.stringify([{ id: 1, username: "Test_User", role: "employee" }]),
+    );
+    await client.set("tickets", JSON.stringify([]));
+    await client.set("ticketIdCounter", "1");
   }
 })();
 
 app.get("/api/tickets", async (req, res) => {
   try {
-    const tickets = await db.getData("/tickets");
-    const users = await db.getData("/users");
+    const tickets = JSON.parse((await client.get("tickets")) || "[]");
+    const users = JSON.parse((await client.get("users")) || "[]");
 
     const results = tickets.map((t) => {
       const user = users.find((u) => u.id === t.created_by);
@@ -42,11 +44,14 @@ app.get("/api/tickets", async (req, res) => {
 app.post("/api/tickets", async (req, res) => {
   try {
     const { title, description } = req.body;
-    const id = await db.getData("/ticketIdCounter");
+    const id = parseInt((await client.get("ticketIdCounter")) || "1");
     const newTicket = { id, title, description, status: "Open", created_by: 1 };
 
-    await db.push("/tickets[]", newTicket);
-    await db.push("/ticketIdCounter", id + 1);
+    const tickets = JSON.parse((await client.get("tickets")) || "[]");
+    tickets.push(newTicket);
+
+    await client.set("tickets", JSON.stringify(tickets));
+    await client.set("ticketIdCounter", (id + 1).toString());
 
     res.json({ message: "Ticket created!", id });
   } catch (err) {
@@ -58,11 +63,12 @@ app.put("/api/tickets/:id", async (req, res) => {
   try {
     const { status } = req.body;
     const ticketId = parseInt(req.params.id);
-    const tickets = await db.getData("/tickets");
+    const tickets = JSON.parse((await client.get("tickets")) || "[]");
 
     const index = tickets.findIndex((t) => t.id === ticketId);
     if (index !== -1) {
-      await db.push(`/tickets[${index}]/status`, status);
+      tickets[index].status = status;
+      await client.set("tickets", JSON.stringify(tickets));
       res.json({ message: "Ticket updated!" });
     } else {
       res.status(404).json({ error: "Ticket not found" });
