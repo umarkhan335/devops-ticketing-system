@@ -7,9 +7,9 @@ pipeline {
     }
 
     stages {
-        stage('Build Docker Image') {
+        stage('Investigation') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                sh "ls -R"
             }
         }
 
