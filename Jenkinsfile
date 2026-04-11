@@ -20,11 +20,9 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                // JENKINS_NODE_COOKIE prevents Jenkins from killing the background task
                 withEnv(['JENKINS_NODE_COOKIE=dontKillMe']) {
-                    // Run the commands entirely in the background so Jenkins immediately succeeds
-                    sh "nohup docker-compose down --remove-orphans > /dev/null 2>&1 &"
-                    sh "nohup docker-compose up -d > /dev/null 2>&1 &"
+                    // We use 'sh -c' to combine them, ensuring down finishes BEFORE up starts
+                    sh "nohup sh -c 'docker-compose down --remove-orphans && docker-compose up -d' > /dev/null 2>&1 &"
                 }
             }
         }
