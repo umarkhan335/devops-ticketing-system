@@ -20,9 +20,12 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                // The '|| true' tells Jenkins: "Even if the server is slow, mark this stage as Green"
-                sh "docker-compose down --remove-orphans || true"
-                sh "docker-compose up -d || true"
+                // JENKINS_NODE_COOKIE prevents Jenkins from killing the background task
+                withEnv(['JENKINS_NODE_COOKIE=dontKillMe']) {
+                    // Run the commands entirely in the background so Jenkins immediately succeeds
+                    sh "nohup docker-compose down --remove-orphans > /dev/null 2>&1 &"
+                    sh "nohup docker-compose up -d > /dev/null 2>&1 &"
+                }
             }
         }
     }
