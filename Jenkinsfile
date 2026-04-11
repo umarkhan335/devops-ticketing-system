@@ -9,8 +9,7 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                // Building from the sub-folder
-                sh "docker build -t ${DOCKER_IMAGE}:latest devops-ticketing-system/"
+                sh "docker build -t ${DOCKER_IMAGE}:latest ."
             }
         }
 
@@ -25,10 +24,8 @@ pipeline {
 
         stage('Deploy with Docker Compose') {
             steps {
-                dir('devops-ticketing-system') {
-                    sh "docker-compose down"
-                    sh "docker-compose up -d"
-                }
+                sh "docker-compose down"
+                sh "docker-compose up -d"
             }
         }
     }
