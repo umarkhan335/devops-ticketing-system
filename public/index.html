@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevOps Ticketing System</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        background-color: #f4f4f9;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+      }
+      .ticket {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+      }
+      .status {
+        font-weight: bold;
+        color: #d9534f;
+      }
+      .status.resolved {
+        color: #5cb85c;
+      }
+      input,
+      textarea,
+      button,
+      select {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0 15px 0;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #5bc0de;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #31b0d5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Submit a New Ticket</h1>
+      <form id="ticketForm">
+        <input
+          type="text"
+          id="title"
+          placeholder="Issue Title (e.g., Server Down)"
+          required
+        />
+        <textarea
+          id="description"
+          placeholder="Describe the issue..."
+          required
+        ></textarea>
+        <button type="submit">Submit Ticket</button>
+      </form>
+      <hr />
+      <h1>Active Tickets</h1>
+      <div id="ticketsList"></div>
+    </div>
+
+    <script>
+      async function loadTickets() {
+        const res = await fetch("/api/tickets");
+        const tickets = await res.json();
+        const list = document.getElementById("ticketsList");
+        list.innerHTML = "";
+
+        tickets.forEach((t) => {
+          const isResolved = t.status === "Resolved";
+          list.innerHTML += `
+                <div class="ticket">
+                    <h3>${t.title}</h3>
+                    <p>${t.description}</p>
+                    <p>Reported by: ${t.creator} | Status: <span class="status ${isResolved ? "resolved" : ""}">${t.status}</span></p>
+                    ${
+                      !isResolved
+                        ? `
+                        <select onchange="updateStatus(${t.id}, this.value)">
+                            <option value="">Update Status...</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    `
+                        : ""
+                    }
+                </div>
+            `;
+        });
+      }
+
+      document
+        .getElementById("ticketForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const title = document.getElementById("title").value;
+          const description = document.getElementById("description").value;
+
+          await fetch("/api/tickets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, description }),
+          });
+
+          document.getElementById("ticketForm").reset();
+          loadTickets();
+        });
+
+      async function updateStatus(id, newStatus) {
+        if (!newStatus) return;
+        await fetch(`/api/tickets/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        loadTickets();
+      }
+
+      loadTickets();
+    </script>
+  </body>
+</html>
