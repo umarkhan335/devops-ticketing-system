@@ -20,8 +20,8 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                // We add an environment variable to increase the timeout to 5 minutes
-                sh "export COMPOSE_HTTP_TIMEOUT=300 && docker-compose down"
+                // We use 'sh' to set the timeout and run compose in one go
+                sh "export COMPOSE_HTTP_TIMEOUT=300 && docker-compose down --remove-orphans"
                 sh "export COMPOSE_HTTP_TIMEOUT=300 && docker-compose up -d"
             }
         }
