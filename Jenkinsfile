@@ -21,8 +21,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 withEnv(['JENKINS_NODE_COOKIE=dontKillMe']) {
-                    // We use 'sh -c' to combine them, ensuring down finishes BEFORE up starts
-                    sh "nohup sh -c 'docker-compose down --remove-orphans && docker-compose up -d' > /dev/null 2>&1 &"
+                    // We tell Jenkins: "Use the new file and name the project 'part2'"
+                    sh "nohup sh -c 'docker-compose -f docker-compose-jenkins.yml -p part2 down --remove-orphans && docker-compose -f docker-compose-jenkins.yml -p part2 up -d' > /dev/null 2>&1 &"
                 }
             }
         }

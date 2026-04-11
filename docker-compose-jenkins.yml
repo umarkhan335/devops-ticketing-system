@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    container_name: part2_web
+    ports:
+      - "8081:8080"  # This is the new door! Port 8081.
+    depends_on:
+      - redis-db
+    restart: always
+  redis-db:
+    image: "redis:alpine"
+    container_name: part2_redis
+    ports:
+      - "6380:6379"  # A separate door for the database
+    volumes:
+      - part2_redis_data:/data
+volumes:
+  part2_redis_data:
