@@ -1,1 +1,1 @@
-# DevOps Ticketing System assignment 2
+# DevOps Ticketing System
